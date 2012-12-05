@@ -11,3 +11,14 @@ Requirements
 
 * PHP 4.3 or later
 
+Contents
+--------
+
+* PAMI - PHP AMI library which provides connection to Asterisk for monitoring calls
+* log4php - logging component required by PAMI
+* poof - HTML5 Bootstrap Framework
+* index.php - Status page
+* menu-config.php - configuration of AMI and KeyMetric SOAP API
+* menu-numbers.php - list of DID matches with tester
+* navbar.php - consistent navigation and style across pages
+
