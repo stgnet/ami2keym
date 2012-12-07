@@ -17,7 +17,6 @@ use PAMI\Listener\IEventListener;
 class ami2keym_daemon extends pfDaemonServer
 {
     private $pami;
-    private $active_calls;
 
     function __construct()
     {
