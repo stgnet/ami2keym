@@ -4,46 +4,51 @@
 
     $ami2keym=pfDaemon('ami2keym');
 
+    $start=function($data)
+    {
+        global $ami2keym;
+        $ami2keym->start();
+        echo uiBadge("success")->Add("Started");
+    };
+    $stop=function($data)
+    {
+        global $ami2keym;
+        $ami2keym->stop();
+        echo uiBadge("success")->Add("Stopped");
+    };
     $status=function($data)
     {
         global $ami2keym;
-
-        $calls=$ami2keym->GetCalls();
-
-        if (!$calls || !count($calls))
-        {
-            sleep(5);
-            echo "<p>No active calls</p>";
-        }
-        else
-        {
-            $table=array();
-            foreach ($calls as $call)
-            {
-                if (empty($call['extension']))
-                    $call['extension']='unknown';
-                if (empty($call['context-last']))
-                    $call['context-last']='unknown';
-                if (empty($call['application-last']))
-                    $call['application-last']='unknown';
-
-                $table[]=array(
-                    'CID'=>$call['calleridnum']." ".$call['calleridname'],
-                    'DID'=>$call['extension'],
-                    'Context'=>$call['context-last'],
-                    'Application'=>$call['application-last']
-                );
-            }
-            echo uiTable(dbArray($table));
-        }
+        $info=htmlentities($ami2keym->status());
+        echo "<pre>Status: $info</pre>";
     };
+
+    $activity=function($data)
+    {
+        global $ami2keym;
+        $calls=$ami2keym->GetCalls();
+        if (!$calls || !count($calls))
+            echo "<p>No active calls</p>";
+        else
+            echo uiTable(dbArray($calls));
+    };
+
+    $StatusDiv=uiLongPoll()->Every(3)->Post($status);
 
     echo uiPage("Status")->Add(
         $navbar,
         uiContainer()->Add(
             uiWell()->Add(
                 uiLegend("Status"),
-                uiLongPoll()->Post($status)
+                $StatusDiv,
+                uiDiv()->Add(
+                    uiButton("START")->Post($start)->Target($StatusDiv),
+                    uiButton("STOP")->Post($stop)->Target($StatusDiv)
+                )
+            ),
+            uiWell()->Add(
+                uiLegend("Activity"),
+                uiLongPoll()->Every(2)->Post($activity)
             )
         )
     );

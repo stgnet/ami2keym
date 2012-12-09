@@ -2,28 +2,13 @@
     require 'poof/poof.php';
     require 'navbar.php';
 
-
     $fields=array(
         'number'=>array('type'=>"text",'desc'=>"Number"),
     );
 
     $db_did=dbCsv("did.csv")->SetFields($fields,'key');
 
-    function match_number($number)
-    {
-        global $db_did;
-
-        foreach ($db_did->records() as $record)
-        {
-            if (empty($record['number']))
-                continue;
-
-            $len=strlen($record['number']);
-            if (substr($number,-$len)==$record['number'])
-                return(true);
-        }
-        return(false);
-    }
+    require 'match-number.php';
 
     $help1="Enter a number to check in list.";
     $help2="Inbound calls to destination numbers listed here will be transmitted to KeyMetrics.

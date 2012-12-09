@@ -1,4 +1,6 @@
 <?php
+    // top row navigation bar and theme settings for all pages
+
     poof_theme("cerulean");
 
     $navmenu=array('Status'=>"/");

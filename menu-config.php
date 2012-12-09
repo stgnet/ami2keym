@@ -12,7 +12,7 @@
 
     $keymetric_fields=array(
         'key'=>array('type'=>"hidden"),
-        'server'=>array('type'=>"text",'desc'=>"Server"),
+        'server'=>array('type'=>"text",'desc'=>"WSDL"),
         'customerid'=>array('type'=>"text",'desc'=>"Customer ID"),
         'userid'=>array('type'=>"text",'desc'=>"User ID"),
         'password'=>array('type'=>"password",'desc'=>"Password"),
@@ -26,7 +26,6 @@
     $keymetric_edit=array_merge($keymetric_fields,array(
         'submit'=>array('type'=>"button",'value'=>"SAVE")
     ));
-
 
     $amiconfig_db=dbCsv("amiconfig.csv")->SetFields($amiconfig_fields,'key');
 

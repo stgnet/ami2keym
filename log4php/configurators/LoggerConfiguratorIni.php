@@ -302,7 +302,8 @@ class LoggerConfiguratorIni implements LoggerConfigurator {
 	 * @param LoggerHierarchy $hierarchy
 	 */
 	private function doConfigureProperties($properties, LoggerHierarchy $hierarchy) {
-		$thresholdStr = @$properties[self::THRESHOLD_PREFIX];
+		//$thresholdStr = @$properties[self::THRESHOLD_PREFIX];
+        $thresholdStr=false;
 		$hierarchy->setThreshold(LoggerOptionConverter::toLevel($thresholdStr, LoggerLevel::getLevelAll()));
 		$this->configureRootCategory($properties, $hierarchy);
 		$this->parseCatsAndRenderers($properties, $hierarchy);
