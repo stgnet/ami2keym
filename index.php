@@ -16,6 +16,11 @@
         $ami2keym->stop();
         echo uiBadge("success")->Add("Stopped");
     };
+    $test=function($data)
+    {
+        global $ami2keym;
+        $ami2keym->test();
+    };
     $status=function($data)
     {
         global $ami2keym;
@@ -43,7 +48,8 @@
                 $StatusDiv,
                 uiDiv()->Add(
                     uiButton("START")->Post($start)->Target($StatusDiv),
-                    uiButton("STOP")->Post($stop)->Target($StatusDiv)
+                    uiButton("STOP")->Post($stop)->Target($StatusDiv),
+                    uiButton("TEST")->Post($test)->Target($StatusDiv)
                 )
             ),
             uiWell()->Add(

@@ -10,6 +10,7 @@ Requirements
 ------------
 
 * PHP 4.3 or later
+* PHP-SOAP package installed
 
 Contents
 --------

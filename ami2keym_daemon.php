@@ -49,12 +49,116 @@ function keymetric_call($data)
     $keymetric_status=print_r($result,true);
 }
 
-
 // main daemon that processes AMI events into KeyMetric SOAP push
 class ami2keym_daemon extends pfDaemonServer
 {
     private $pami;
     private $pami_status;
+
+    function AmiEvent(EventMessage $event)
+    {
+        global $calls;
+        global $keymetric_config;
+
+        // get the array of values from the event
+        $keys=$event->getKeys();
+
+        if (empty($keys['uniqueid']))
+            return;
+
+        $uid=$keys['uniqueid'];
+        $keys['time']=time();
+
+        if (empty($calls[$uid]))
+            $calls[$uid]=array();
+
+        // accumulate first instance and last values
+        foreach ($keys as $name => $value)
+        {
+            if (empty($calls[$uid][$name]))
+                $calls[$uid][$name]=$value;
+            $calls[$uid][$name.'-last']=$value;
+        }
+
+        // when the call completes, process it
+        if ($keys['event']=="Hangup")
+        {
+            $call=$calls[$uid];
+            //file_put_contents("sample.txt",print_r($call,true));
+            if (!empty($call['extension']) && match_number($call['extension']))
+            {
+                $callstart=date('Y-m-dTH:i:sZ',$call['time']);
+                $duration=$call['time-last']-$call['time'];
+                $data=array(
+                    'Vendor'=>$keymetric_config['vendor'],
+                    'VendorCallId'=>$call['uniqueid'],
+                    'CallStart'=>$callstart,
+                    'Duration'=>$duration,
+                    'CallerID'=>$call['calleridnum'],
+                    'DialedNumber'=>$call['extension'],
+                    'CallStatus'=>$call['context-last'],
+                    'CallerName'=>$call['calleridname'],
+                );
+
+                try
+                {
+                    keymetric_call($data);
+                }
+                catch (Exception $e)
+                {
+                    $this->pami_status="Failure in keymetric_call(): ".$e->getMessage();
+                }
+            }
+            // remove call from active list
+            unset($calls[$uid]);
+        }
+    
+    }
+
+    // simulate call through event handling
+    function test()
+    {
+        global $db_did;
+
+        // force loading of db_did;
+        match_number('12345');
+
+        $didlist=$db_did->records();
+        if (empty($didlist))
+        {
+            $this->pami_status="Error: cannot test without a number in DID list";
+            return;
+        }
+        $entry=array_rand($didlist);
+
+        $number=$entry['number'];
+
+        $uniqueid=md5(rand());
+
+                $callstart=date('Y-m-dTH:i:sZ',time()-61);
+                $duration=60;
+                $data=array(
+                    'Vendor'=>$keymetric_config['vendor'],
+                    'VendorCallId'=>$uniqueid,
+                    'CallStart'=>$callstart,
+                    'Duration'=>$duration,
+                    'CallerID'=>"+13175550123",
+                    'DialedNumber'=>$number,
+                    'CallStatus'=>"from-pstn",
+                    'CallerName'=>"TEST CALL",
+                );
+
+                try
+                {
+                    keymetric_call($data);
+                }
+                catch (Exception $e)
+                {
+                    $this->pami_status="Failure in keymetric_call(): ".$e->getMessage();
+                }
+
+    }
+
 
     // when START button is pressed on web ui
     function start()
@@ -105,58 +209,8 @@ class ami2keym_daemon extends pfDaemonServer
             $this->pami->open();  
 
             // add handler for Asterisk events
-            $this->pami->registerEventListener(function(EventMessage $event)
-            {
-                global $calls;
-                global $keymetric_config;
-
-                // get the array of values from the event
-                $keys=$event->getKeys();
-
-                if (empty($keys['uniqueid']))
-                    return;
-
-                $uid=$keys['uniqueid'];
-                $keys['time']=time();
-
-                if (empty($calls[$uid]))
-                    $calls[$uid]=array();
-
-                // accumulate first instance and last values
-                foreach ($keys as $name => $value)
-                {
-                    if (empty($calls[$uid][$name]))
-                        $calls[$uid][$name]=$value;
-                    $calls[$uid][$name.'-last']=$value;
-                }
-
-                // when the call completes, process it
-                if ($keys['event']=="Hangup")
-                {
-                    $call=$calls[$uid];
-                    //file_put_contents("sample.txt",print_r($call,true));
-                    if (match_number($call['extension']))
-                    {
-                        $callstart=date('Y-m-dTH:i:sZ',$call['time']);
-                        $duration=$call['time-last']-$call['time'];
-                        $data=array(
-                            'Vendor'=>$keymetric_config['vendor'],
-                            'VendorCallId'=>$call['uniqueid'],
-                            'CallStart'=>$callstart,
-                            'Duration'=>$duration,
-                            'CallerID'=>$call['calleridnum'],
-                            'DialedNumber'=>$call['extension'],
-                            'CallStatus'=>$call['context-last'],
-                            'CallerName'=>$call['calleridname'],
-                        );
-                        keymetric_call($data);
-                    }
-                    // remove call from active list
-                    unset($calls[$uid]);
-                }
-    
-            });
-
+            $this->pami->registerEventListener(array($this,'AmiEvent'));
+            
             $this->pami_status="Running";
         }
         catch (Exception $e)
