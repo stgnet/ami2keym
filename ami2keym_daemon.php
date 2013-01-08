@@ -119,6 +119,7 @@ class ami2keym_daemon extends pfDaemonServer
     function test()
     {
         global $db_did;
+        global $keymetric_config;
 
         // force loading of db_did;
         match_number('12345');
