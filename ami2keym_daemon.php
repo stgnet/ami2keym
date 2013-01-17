@@ -20,10 +20,11 @@ require_once 'match-number.php';
 // keymetric API status is appended to AMI status for web display
 $keymetric_status='';
 
+
 // pass call detail to keymetric
 function keymetric_call($data)
 {
-    global $soap;
+    global $soap_client;
     global $keymetric_config;
     global $keymetric_status;
 
@@ -31,7 +32,7 @@ function keymetric_call($data)
     if (empty($wsdl))
     {
         // pretend it succeeded
-        $keymetric_status=print_r($data,true);
+        $keymetric_status="Simulated AddCall() with ".print_r($data,true);
         return;
     }
 
@@ -41,10 +42,23 @@ function keymetric_call($data)
         'Password'=>$keymetric_config['password']
     );
 
-    if (empty($soap))
-        $soap=new SoapClient($wsdl,$header);
+    if (empty($soap_client))
+    {
+/*
+$wsdl='http://webservice.keymetric.net/v1/EnterpriseService.asmx?WSDL';
+ $header=Array(
+         'CustomerId' => '11211',
+                 'UserId' => 'api@techvedic.com',
+                         'Password' => 'password123'
+                             );
+ */
 
-    $result=$client->AddCall($data);
+
+        //$keymetric_status="Initializing SoapClient($wsdl) ".print_r($header,true);
+        $soap_client=new SoapClient('http://webservice.keymetric.net/v1/EnterpriseService.asmx?WSDL'); //$wsdl,$header);
+    }
+
+    $result=$soap_client->AddCall($data);
     //print_r($result);
     $keymetric_status=print_r($result,true);
 }
@@ -237,7 +251,7 @@ class ami2keym_daemon extends pfDaemonServer
         $this->pami=false;
 
         // allow the daemon to timeout and shutdown
-        $this->SetTimeout(3);
+        $this->SetTimeout(1);
     }
 
     // initialize the daemon
