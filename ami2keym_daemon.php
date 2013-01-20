@@ -17,50 +17,19 @@ use PAMI\Listener\IEventListener;
 // number matching algorithm
 require_once 'match-number.php';
 
-// keymetric API status is appended to AMI status for web display
-$keymetric_status='';
-
 
 // pass call detail to keymetric
 function keymetric_call($data)
 {
-    global $soap_client;
-    global $keymetric_config;
     global $keymetric_status;
 
-    $wsdl=$keymetric_config['server'];
-    if (empty($wsdl))
-    {
-        // pretend it succeeded
-        $keymetric_status="Simulated AddCall() with ".print_r($data,true);
-        return;
-    }
-
-    $header=array(
-        'CustomerId'=>$keymetric_config['customerid'],
-        'UserId'=>$keymetric_config['userid'],
-        'Password'=>$keymetric_config['password']
-    );
-
-    if (empty($soap_client))
-    {
-/*
-$wsdl='http://webservice.keymetric.net/v1/EnterpriseService.asmx?WSDL';
- $header=Array(
-         'CustomerId' => '11211',
-                 'UserId' => 'api@techvedic.com',
-                         'Password' => 'password123'
-                             );
- */
-
-
-        //$keymetric_status="Initializing SoapClient($wsdl) ".print_r($header,true);
-        $soap_client=new SoapClient('http://webservice.keymetric.net/v1/EnterpriseService.asmx?WSDL'); //$wsdl,$header);
-    }
-
-    $result=$soap_client->AddCall($data);
-    //print_r($result);
-    $keymetric_status=print_r($result,true);
+    $in=json_encode($data);
+    $out=shell_exec("php kmcall.php '$in'");
+    if ($out[0]!='{')
+        Fatal("invalid output from kmcall: '$out'");
+    $result=json_decode($out);
+    $keymetric_status="Result: ".print_r($result,true);
+    return($result);
 }
 
 // main daemon that processes AMI events into KeyMetric SOAP push
