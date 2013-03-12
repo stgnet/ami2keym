@@ -4,7 +4,7 @@
 require_once 'poof/poof.php';
 
 // prevent logger from throwing timezone error
-date_default_timezone_set('America/New_York');
+date_default_timezone_set('UTC');
 
 // Asterisk interface and logger prerequisite
 require_once 'log4php/Logger.php';
@@ -27,8 +27,11 @@ function keymetric_call($data)
     $out=shell_exec("php kmcall.php '$in'");
     if ($out[0]!='{')
         Fatal("invalid output from kmcall: '$out'");
-    $result=json_decode($out);
-    $keymetric_status="Result: ".print_r($result,true);
+    $result=(array)json_decode($out);
+    if (!empty($result['error']))
+        $keymetric_status="SOAP ERROR: ".$result['error'];
+    else
+        $keymetric_status="Result: ".print_r($result,true);
     return($result);
 }
 
@@ -70,7 +73,7 @@ class ami2keym_daemon extends pfDaemonServer
             //file_put_contents("sample.txt",print_r($call,true));
             if (!empty($call['extension']) && match_number($call['extension']))
             {
-                $callstart=date('Y-m-dTH:i:sZ',$call['time']);
+                $callstart=date('Y-m-d\TH:i:s\Z',$call['time']);
                 $duration=$call['time-last']-$call['time'];
                 $data=array(
                     'Vendor'=>$keymetric_config['vendor'],
@@ -115,11 +118,11 @@ class ami2keym_daemon extends pfDaemonServer
         }
         $entry=array_rand($didlist);
 
-        $number=$entry['number'];
+        $number="3175550155"; //$entry['number'];
 
         $uniqueid=md5(rand());
 
-                $callstart=date('Y-m-dTH:i:sZ',time()-61);
+                $callstart=date('Y-m-d\TH:i:s\Z',time()-61);
                 $duration=60;
                 $data=array(
                     'Vendor'=>$keymetric_config['vendor'],
@@ -199,7 +202,7 @@ class ami2keym_daemon extends pfDaemonServer
         }
         catch (Exception $e)
         {
-            $this->pami_status="ERROR: ".$e->getMessage();
+            $this->pami_status="AMI ERROR: ".$e->getMessage();
             $this->pami=false;
         }
     }

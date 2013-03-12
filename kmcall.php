@@ -59,8 +59,13 @@
 
     try
     {
-        $soap_client=new SoapClient($wsdl,
-            array('trace'=>1,'exception'=>1)); //$wsdl,$header);
+        $soap_client=new SoapClient($wsdl,array(
+//            'soap_version'=>SOAP_1_2,
+            'trace'=>1,
+            'exception'=>true,
+//            'cache_wsdl'=>WSDL_CACHE_NONE,
+//            'features'=>SOAP_SINGLE_ELEMENT_ARRAYS
+        )); //$wsdl,$header);
     }
     catch (Exception $e)
     {
@@ -80,7 +85,15 @@
 
     try
     {
-        $result=$soap_client->AddCall($calldata);
+        /*
+        $params=array();
+        foreach ($calldata as $name => $value)
+            $params[]=new SoapParam($value,$name);
+
+        //$result=$soap_client->AddCall(array($params));
+        $result=$soap_client->__soapCall("AddCall",$params);
+        */
+        $result=$soap_client->__soapCall("AddCall",array('AddCall'=>array('Call'=>$calldata)));
     }
     catch (Exception $e)
     {
